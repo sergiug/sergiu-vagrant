@@ -1,7 +1,7 @@
 require 'yaml'
 
 dir = File.dirname(File.expand_path(__FILE__))
-
+parameters = YAML.load_file ("#{dir}/parameters.yaml")
 configValues = YAML.load_file("#{dir}/puphpet/config.yaml")
 data         = configValues['vagrantfile-local']
 
@@ -12,11 +12,11 @@ Vagrant.configure('2') do |config|
   config.vm.box_url = "#{data['vm']['box_url']}"
 
   if data['vm']['hostname'].to_s.strip.length != 0
-    config.vm.hostname = "#{data['vm']['hostname']}"
+    config.vm.hostname = "#{parameters['hostname']}"
   end
 
   if data['vm']['network']['private_network'].to_s != ''
-    config.vm.network 'private_network', ip: "#{data['vm']['network']['private_network']}"
+    config.vm.network 'private_network', ip: "#{parameters['ip']}"
   end
 
   data['vm']['network']['forwarded_port'].each do |i, port|
@@ -36,11 +36,11 @@ Vagrant.configure('2') do |config|
         configValues['apache']['install'].to_i == 1 &&
         configValues['apache']['vhosts'].is_a?(Hash)
       configValues['apache']['vhosts'].each do |i, vhost|
-        hosts.push(vhost['servername'])
+        hosts.push("#{parameters['hostname']}")
 
         if vhost['serveraliases'].is_a?(Array)
           vhost['serveraliases'].each do |vhost_alias|
-            hosts.push(vhost_alias)
+            hosts.push("#{parameters['hostname_alias']}")
           end
         end
       end
@@ -48,11 +48,11 @@ Vagrant.configure('2') do |config|
            configValues['nginx']['install'].to_i == 1 &&
            configValues['nginx']['vhosts'].is_a?(Hash)
       configValues['nginx']['vhosts'].each do |i, vhost|
-        hosts.push(vhost['server_name'])
+        hosts.push("#{parameters['hostname']}")
 
         if vhost['server_aliases'].is_a?(Array)
           vhost['server_aliases'].each do |x, vhost_alias|
-            hosts.push(vhost_alias)
+            hosts.push("#{parameters['hostname_alias']}")
           end
         end
       end
@@ -79,23 +79,23 @@ Vagrant.configure('2') do |config|
   end
 
   data['vm']['synced_folder'].each do |i, folder|
-    if folder['source'] != '' && folder['target'] != ''
+    if parameters['host_docroot'] != '' && folder['target'] != ''
       if folder['sync_type'] == 'nfs'
-        config.vm.synced_folder "#{folder['source']}", "#{folder['target']}", id: "#{i}", type: 'nfs'
+        config.vm.synced_folder "#{parameters['host_docroot']}", "#{folder['target']}", id: "#{i}", type: 'nfs'
       elsif folder['sync_type'] == 'smb'
-        config.vm.synced_folder "#{folder['source']}", "#{folder['target']}", id: "#{i}", type: 'smb'
+        config.vm.synced_folder "#{parameters['host_docroot']}", "#{folder['target']}", id: "#{i}", type: 'smb'
       elsif folder['sync_type'] == 'rsync'
         rsync_args = !folder['rsync']['args'].nil? ? folder['rsync']['args'] : ['--verbose', '--archive', '-z']
         rsync_auto = !folder['rsync']['auto'].nil? ? folder['rsync']['auto'] : true
         rsync_exclude = !folder['rsync']['exclude'].nil? ? folder['rsync']['exclude'] : ['.vagrant/']
 
-        config.vm.synced_folder "#{folder['source']}", "#{folder['target']}", id: "#{i}",
+        config.vm.synced_folder "#{parameters['host_docroot']}", "#{folder['target']}", id: "#{i}",
           rsync__args: rsync_args, rsync__exclude: rsync_exclude, rsync__auto: rsync_auto, type: 'rsync'
       elsif data['vm']['chosen_provider'] == 'parallels'
-        config.vm.synced_folder "#{folder['source']}", "#{folder['target']}", id: "#{i}",
+        config.vm.synced_folder "#{parameters['host_docroot']}", "#{folder['target']}", id: "#{i}",
           group: 'www-data', owner: 'www-data', mount_options: ['share']
       else
-        config.vm.synced_folder "#{folder['source']}", "#{folder['target']}", id: "#{i}",
+        config.vm.synced_folder "#{parameters['host_docroot']}", "#{folder['target']}", id: "#{i}",
           group: 'www-data', owner: 'www-data', mount_options: ['dmode=775', 'fmode=764']
       end
     end
