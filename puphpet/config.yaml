@@ -32,7 +32,7 @@ vagrantfile-local:
                     - '--hiera_config /vagrant/puphpet/puppet/hiera.yaml'
                     - '--parser future'
         synced_folder:
-            CTA25e3NLQ0N:
+            www:
                 source: 'd:/www/'
                 target: /var/www
                 sync_type: default
@@ -43,7 +43,7 @@ vagrantfile-local:
                         - '-z'
                     exclude:
                         - .vagrant/
-                    auto: 'false'
+                    auto: 'true'
         usable_port_range:
             start: 10200
             stop: 10500
@@ -83,7 +83,7 @@ apache:
             servername: sergiu.dev
             serveraliases:
                 - www.sergiu.dev
-            docroot: /var/www/
+            docroot: /media/sf_www/
             port: '80'
             setenv:
                 - 'APP_ENV dev'
